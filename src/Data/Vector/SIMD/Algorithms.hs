@@ -17,6 +17,7 @@
  -}
 
 {-# LANGUAGE BangPatterns, ForeignFunctionInterface, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Data.Vector.SIMD.Algorithms (
     unsafeXorSSE42
@@ -40,7 +41,11 @@ import qualified Data.Vector.SIMD.Mutable as MSV
 foreign import ccall unsafe "_vector_simd_xor_sse42" _c_xor_sse42
     :: Ptr a -> Ptr a -> Ptr a -> CSize -> IO ()
 
-unsafeXorSSE42 :: Storable a => SV.Vector SV.A16 a -> SV.Vector SV.A16 a -> SV.Vector SV.A16 a
+unsafeXorSSE42 :: (Storable a,
+    SV.AlignedToAtLeast SV.A16 o1, SV.Alignment o1,
+    SV.AlignedToAtLeast SV.A16 o2, SV.Alignment o2,
+    SV.AlignedToAtLeast SV.A16 o3, SV.Alignment o3) =>
+    SV.Vector o1 a -> SV.Vector o2 a -> SV.Vector o3 a
 unsafeXorSSE42 !a !b = unsafePerformIO $ do
     let l = SV.length a
         --bl = l * (sizeOf (undefined :: a))
@@ -55,3 +60,5 @@ unsafeXorSSE42 !a !b = unsafePerformIO $ do
 
                 SV.unsafeFreeze n
 {-# INLINE unsafeXorSSE42 #-}
+{-# SPECIALIZE unsafeXorSSE42 ::
+        SV.Vector SV.A16 Word8 -> SV.Vector SV.A16 Word8 -> SV.Vector SV.A16 Word8 #-}

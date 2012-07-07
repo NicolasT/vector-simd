@@ -76,7 +76,7 @@ main = do
     !(!sv1024a, !sv1024b) = gen SV.fromListN 1024
     !(!sv4096a, !sv4096b) = gen SV.fromListN 4096
 
-    mv1024a, mv1024b, mv4096a, mv4096b :: MV.Vector MV.A16 Word8
+    mv1024a, mv1024b, mv4096a, mv4096b :: MV.Vector MV.A32 Word8
     !(!mv1024a, !mv1024b) = gen MV.fromListN 1024
     !(!mv4096a, !mv4096b) = gen MV.fromListN 4096
 
@@ -105,14 +105,24 @@ benchSV !a !b = r
     !r = SV.zipWith xor a b
     {-# INLINE r #-}
 
-benchMV :: MV.Vector MV.A16 Word8 -> MV.Vector MV.A16 Word8 -> MV.Vector MV.A16 Word8
+benchMV :: MV.Vector MV.A32 Word8 -> MV.Vector MV.A32 Word8 -> MV.Vector MV.A32 Word8
 benchMV !a !b = r
   where
-    r :: MV.Vector MV.A16 Word8
+    r :: MV.Vector MV.A32 Word8
     !r = MV.zipWith xor a b
     {-# INLINE r #-}
 
-benchMVA :: MV.Vector MV.A16 Word8 -> MV.Vector MV.A16 Word8 -> MV.Vector MV.A16 Word8
+-- unsafeXorSSE42 is typed
+-- unsafeXorSSE42 :: (Storable a,
+--  MSV.AlignedToAtLeast MSV.A16 o1, MSV.Alignment o1,
+--  MSV.AlignedToAtLeast MSV.A16 o2, MSV.Alignment o2,
+--  MSV.AlignedToAtLeast MSV.A16 o3, MSV.Alignment o3) =>
+--  SV.Vector o1 a -> SV.Vector o2 a -> SV.Vector o3 a
+-- We restrict the type of benchMVA just a little more, to show how A32 is
+-- compatible with the requested A16 (as intended).
+-- The result is of a different type though, imagining we only need a 16-byte
+-- aligned vector further on for some random reason
+benchMVA :: MV.Vector MV.A32 Word8 -> MV.Vector MV.A32 Word8 -> MV.Vector MV.A16 Word8
 benchMVA !a !b = r
   where
     r :: MV.Vector MV.A16 Word8

@@ -18,15 +18,18 @@
 
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables, ForeignFunctionInterface, EmptyDataDecls #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleContexts #-}
 
 module Data.Vector.SIMD.Mutable (
     MVector(..), IOVector, STVector,
-    Alignment, A8, A16,
+    AlignedToAtLeast, Alignment, A1, A2, A4, A8, A16, A32,
     new,
     unsafeWith
 ) where
 
 import qualified Data.Vector.Generic.Mutable as G
+
+import qualified Data.Word as W
 
 import Foreign.Storable hiding (alignment)
 import Foreign.ForeignPtr
@@ -54,13 +57,33 @@ type STVector o s = MVector o s
 class Alignment o where
     alignment :: o -> Int
 
-data A8
+data One
+data Twice n
+
+class AlignedToAtLeast n a
+instance AlignedToAtLeast One One
+instance AlignedToAtLeast One (Twice a)
+instance AlignedToAtLeast n a => AlignedToAtLeast (Twice n) (Twice a)
+
+type A1 = One
+type A2 = Twice A1
+type A4 = Twice A2
+type A8 = Twice A4
+type A16 = Twice A8
+type A32 = Twice A16
+
+instance Alignment A1 where
+    alignment _ = 1
+instance Alignment A2 where
+    alignment _ = 2
+instance Alignment A4 where
+    alignment _ = 4
 instance Alignment A8 where
     alignment _ = 8
-
-data A16
 instance Alignment A16 where
     alignment _ = 16
+instance Alignment A32 where
+    alignment _ = 32
 
 instance (Storable a, Alignment o) => G.MVector (MVector o) a where
     basicLength (MVector n _) = n
@@ -83,6 +106,8 @@ instance (Storable a, Alignment o) => G.MVector (MVector o) a where
         fp <- mallocVector n (undefined :: o)
         return $ MVector n fp
     {-# INLINE basicUnsafeNew #-}
+    {-# SPECIALIZE basicUnsafeNew ::
+            (Storable a, PrimMonad m) => Int -> m (MVector A16 (PrimState m) a) #-}
 
     basicUnsafeRead (MVector _ fp) i =
         unsafePrimToPrim $ withForeignPtr fp (`peekElemOff` i)
@@ -120,6 +145,7 @@ mallocVector = doMalloc undefined
             else newForeignPtr finalizer_mm_free ptr
     {-# INLINE doMalloc #-}
 {-# INLINE mallocVector #-}
+{-# SPECIALIZE mallocVector :: Int -> A16 -> IO (ForeignPtr W.Word8) #-}
 
 new :: (PrimMonad m, Storable a, Alignment o) => Int -> m (MVector o (PrimState m) a)
 new = G.new
