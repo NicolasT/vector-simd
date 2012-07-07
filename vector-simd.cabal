@@ -1,0 +1,26 @@
+Name: vector-simd
+Version: 0.0
+License: LGPL-3
+Description: Combining vector with SIMD intrinsics
+Author: Nicolas Trangez
+Maintainer: ikke@nicolast.be
+Build-Type: Simple
+Cabal-Version: >=1.2
+
+Executable bench-xor
+  Main-is: xor.hs
+  Build-Depends:
+    base >= 3 && < 5,
+    vector,
+    criterion,
+    primitive
+
+  Hs-source-dirs:
+    src,
+    benchmark
+
+  C-sources:
+    cbits/vector-simd.c
+
+  Ghc-Options: -O2
+  CC-Options: -msse2 -msse4.2 -O3 -fomit-frame-pointer
