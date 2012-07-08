@@ -7,6 +7,25 @@ Maintainer: ikke@nicolast.be
 Build-Type: Simple
 Cabal-Version: >=1.2
 
+Library
+  Build-Depends:
+    base >= 3 && < 5,
+    vector
+
+  Exposed-modules:
+    Data.Vector.SIMD,
+    Data.Vector.SIMD.Mutable,
+    Data.Vector.SIMD.Algorithms
+
+  Hs-source-dirs:
+    src
+
+  C-sources:
+    cbits/vector-simd.c
+
+  Ghc-Options: -O2
+  CC-Options: -msse2 -msse4.2 -O3 -fomit-frame-pointer
+
 Executable bench-xor
   Main-is: xor.hs
   Build-Depends:
