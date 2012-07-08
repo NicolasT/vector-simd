@@ -16,7 +16,7 @@
  - along with this program.  If not, see <http://www.gnu.org/licenses/>.
  -}
 
-{-# LANGUAGE BangPatterns, ForeignFunctionInterface, ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns, ForeignFunctionInterface #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Data.Vector.SIMD.Algorithms (
@@ -45,19 +45,27 @@ unsafeXorSSE42 :: (Storable a,
     SV.AlignedToAtLeast SV.A16 (o1, o2, o3),
     SV.Alignment o1, SV.Alignment o2, SV.Alignment o3) =>
     SV.Vector o1 a -> SV.Vector o2 a -> SV.Vector o3 a
-unsafeXorSSE42 !a !b = unsafePerformIO $ do
-    let l = SV.length a
-        --bl = l * (sizeOf (undefined :: a))
-        bl = l -- TODO HACK!! Assumes a == Word8
+unsafeXorSSE42 !a !b = unsafePerformIO $ helper (undefined :: a) a b
+  where
+    helper :: (Storable b,
+        SV.AlignedToAtLeast SV.A16 (o4, o5, o6),
+        SV.Alignment o4, SV.Alignment o5, SV.Alignment o6) =>
+        b -> SV.Vector o4 b -> SV.Vector o5 b -> IO (SV.Vector o6 b)
+    helper o !a !b = do
+        let !l = SV.length a
+            !bl = l * (sizeOf o)
 
-    SV.unsafeWith a $ \pa ->
-        SV.unsafeWith b $ \pb -> do
-            n <- MSV.new l
+        SV.unsafeWith a $ \(!pa) ->
+            SV.unsafeWith b $ \(!pb) -> do
+                !n <- MSV.new l
 
-            MSV.unsafeWith n $ \pn -> do
-                _c_xor_sse42 pa pb pn (fromIntegral bl)
+                MSV.unsafeWith n $ \(!pn) -> do
+                    _c_xor_sse42 pa pb pn (fromIntegral bl)
 
-                SV.unsafeFreeze n
+                    SV.unsafeFreeze n
+    {-# INLINE helper #-}
+    {-# SPECIALIZE helper ::
+            Word8 -> SV.Vector SV.A16 Word8 -> SV.Vector SV.A16 Word8 -> IO (SV.Vector SV.A16 Word8) #-}
 {-# INLINE unsafeXorSSE42 #-}
 {-# SPECIALIZE unsafeXorSSE42 ::
         SV.Vector SV.A16 Word8 -> SV.Vector SV.A16 Word8 -> SV.Vector SV.A16 Word8 #-}
