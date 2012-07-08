@@ -79,16 +79,15 @@ type A32 = Twice A16
 
 instance Alignment A1 where
     alignment _ = 1
-instance Alignment A2 where
-    alignment _ = 2
-instance Alignment A4 where
-    alignment _ = 4
-instance Alignment A8 where
-    alignment _ = 8
-instance Alignment A16 where
-    alignment _ = 16
-instance Alignment A32 where
-    alignment _ = 32
+instance Alignment a => Alignment (Twice a) where
+    alignment _ = 2 * alignment (undefined :: a)
+
+instance (AlignedToAtLeast n a, AlignedToAtLeast n b) =>
+    AlignedToAtLeast n (a, b)
+instance (AlignedToAtLeast n a, AlignedToAtLeast n b, AlignedToAtLeast n c) =>
+    AlignedToAtLeast n (a, b, c)
+instance (AlignedToAtLeast n a, AlignedToAtLeast n b, AlignedToAtLeast n c, AlignedToAtLeast n d) =>
+    AlignedToAtLeast n (a, b, c, d)
 
 instance (Storable a, Alignment o) => G.MVector (MVector o) a where
     basicLength (MVector n _) = n

@@ -42,9 +42,8 @@ foreign import ccall unsafe "_vector_simd_xor_sse42" _c_xor_sse42
     :: Ptr a -> Ptr a -> Ptr a -> CSize -> IO ()
 
 unsafeXorSSE42 :: (Storable a,
-    SV.AlignedToAtLeast SV.A16 o1, SV.Alignment o1,
-    SV.AlignedToAtLeast SV.A16 o2, SV.Alignment o2,
-    SV.AlignedToAtLeast SV.A16 o3, SV.Alignment o3) =>
+    SV.AlignedToAtLeast SV.A16 (o1, o2, o3),
+    SV.Alignment o1, SV.Alignment o2, SV.Alignment o3) =>
     SV.Vector o1 a -> SV.Vector o2 a -> SV.Vector o3 a
 unsafeXorSSE42 !a !b = unsafePerformIO $ do
     let l = SV.length a
