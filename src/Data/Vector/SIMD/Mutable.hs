@@ -93,7 +93,19 @@ instance (Storable a, Alignment o) => G.MVector (MVector o) a where
     {-# INLINE basicLength #-}
 
     -- TODO Validate alignment is retained
-    basicUnsafeSlice j m (MVector _ fp) = MVector m (updPtr (`advancePtr` j) fp)
+    basicUnsafeSlice j m (MVector _ fp)
+        | (j * s) `rem` a /= 0 =
+            error "Data.Vector.SIMD.Mutable.basicUnsafeSlice: unaligned offset"
+        | (m * s) `rem` a /= 0 =
+            error "Data.Vector.SIMD.Mutable.basicUnsafeSlice: unaligned length"
+        | otherwise = MVector m (updPtr (`advancePtr` j) fp)
+      where
+        a :: Int
+        a = alignment (undefined :: o)
+        {-# INLINE a #-}
+        s :: Int
+        s = sizeOf (undefined :: a)
+        {-# INLINE s #-}
     {-# INLINE basicUnsafeSlice #-}
 
     -- FIXME: this relies on non-portable pointer comparisons
