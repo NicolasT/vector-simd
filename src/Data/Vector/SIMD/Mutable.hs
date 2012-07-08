@@ -41,10 +41,12 @@ import Control.Monad.Primitive
 
 import Data.Typeable (Typeable)
 
-import Data.Vector.Storable.Internal (getPtr, updPtr)
-
-import GHC.Base
 import GHC.Ptr (Ptr(..))
+
+import qualified Data.Primitive.ByteArray as BA
+import qualified Data.Primitive.Types as PT
+
+import Data.Vector.Storable.Internal (getPtr, updPtr)
 
 data MVector o s a = MVector {-# UNPACK #-} !Int
                              {-# UNPACK #-} !(ForeignPtr a)
@@ -131,17 +133,15 @@ mallocVector :: (Storable a, Alignment o) => Int -> o -> IO (ForeignPtr a)
 mallocVector = doMalloc undefined
   where
     doMalloc :: (Storable b, Alignment p) => b -> Int -> p -> IO (ForeignPtr b)
-    doMalloc b l a = IO $ \s ->
-        case newAlignedPinnedByteArray# bytes align s of { (# s', ba #) ->
-          case newForeignPtr_ (Ptr $ byteArrayContents# (unsafeCoerce# ba)) of { IO f ->
-            case f s' of { (# s'', p #) -> (# s'', p #) }
-          }
-        }
+    doMalloc b !l a = do
+        !ba <- BA.newAlignedPinnedByteArray bytes align
+        let !(PT.Addr addr) = BA.mutableByteArrayContents ba
+            !ptr = Ptr addr
+
+        newForeignPtr_ ptr
       where
-        !(I# size)  = sizeOf b
-        !(I# len) = l
-        !bytes = size *# len
-        !(I# align) = alignment a
+        !bytes = sizeOf b * l
+        !align = alignment a
     {-# INLINE doMalloc #-}
     {-# SPECIALIZE doMalloc :: W.Word8 -> Int -> A16 -> IO (ForeignPtr W.Word8) #-}
 {-# INLINE mallocVector #-}
