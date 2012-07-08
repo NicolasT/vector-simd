@@ -93,7 +93,7 @@ length = G.length
 {-# INLINE length #-}
 
 unsafeWith :: (Storable a, Alignment o) => Vector o a -> (Ptr a -> IO b) -> IO b
-unsafeWith (Vector n fp) = withForeignPtr fp
+unsafeWith (Vector _ fp) = withForeignPtr fp
 {-# INLINE unsafeWith #-}
 
 unsafeFreeze :: (Storable a, PrimMonad m, Alignment o) => MVector o (PrimState m) a -> m (Vector o a)

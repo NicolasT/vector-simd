@@ -34,22 +34,16 @@ import qualified Data.Word as W
 
 import Foreign.Storable hiding (alignment)
 import Foreign.ForeignPtr
-import Foreign.Ptr (Ptr, nullPtr)
+import Foreign.Ptr (Ptr)
 import Foreign.Marshal.Array (advancePtr, copyArray, moveArray)
-import Foreign.C.Types (CSize)
-
-import GHC.IO.Exception
 
 import Control.Monad.Primitive
 
 import Data.Typeable (Typeable)
 
-import Control.Monad.ST
-
 import Data.Vector.Storable.Internal (getPtr, updPtr)
 
 import GHC.Base
-import GHC.ForeignPtr (ForeignPtr(..))
 import GHC.Ptr (Ptr(..))
 
 data MVector o s a = MVector {-# UNPACK #-} !Int
@@ -94,7 +88,7 @@ instance (Storable a, Alignment o) => G.MVector (MVector o) a where
     {-# INLINE basicLength #-}
 
     -- TODO Validate alignment is retained
-    basicUnsafeSlice j m (MVector n fp) = MVector m (updPtr (`advancePtr` j) fp)
+    basicUnsafeSlice j m (MVector _ fp) = MVector m (updPtr (`advancePtr` j) fp)
     {-# INLINE basicUnsafeSlice #-}
 
     -- FIXME: this relies on non-portable pointer comparisons
@@ -137,17 +131,17 @@ mallocVector :: (Storable a, Alignment o) => Int -> o -> IO (ForeignPtr a)
 mallocVector = doMalloc undefined
   where
     doMalloc :: (Storable b, Alignment p) => b -> Int -> p -> IO (ForeignPtr b)
-    doMalloc b l p = IO $ \s ->
+    doMalloc b l a = IO $ \s ->
         case newAlignedPinnedByteArray# bytes align s of { (# s', ba #) ->
           case newForeignPtr_ (Ptr $ byteArrayContents# (unsafeCoerce# ba)) of { IO f ->
-            case f s' of { (# s''', p #) -> (# s''', p #) }
+            case f s' of { (# s'', p #) -> (# s'', p #) }
           }
         }
       where
         !(I# size)  = sizeOf b
         !(I# len) = l
         !bytes = size *# len
-        !(I# align) = alignment p
+        !(I# align) = alignment a
     {-# INLINE doMalloc #-}
     {-# SPECIALIZE doMalloc :: W.Word8 -> Int -> A16 -> IO (ForeignPtr W.Word8) #-}
 {-# INLINE mallocVector #-}
@@ -158,5 +152,5 @@ new = G.new
 {-# INLINE new #-}
 
 unsafeWith :: (Storable a, Alignment o) => IOVector o a -> (Ptr a -> IO b) -> IO b
-unsafeWith (MVector n fp) = withForeignPtr fp
+unsafeWith (MVector _ fp) = withForeignPtr fp
 {-# INLINE unsafeWith #-}

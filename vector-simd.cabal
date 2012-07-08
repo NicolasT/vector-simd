@@ -23,7 +23,7 @@ Library
   C-sources:
     cbits/vector-simd.c
 
-  Ghc-Options: -O2
+  Ghc-Options: -O2 -Wall -fwarn-incomplete-patterns -fwarn-unused-binds
   CC-Options: -msse2 -msse4.2 -O3 -fomit-frame-pointer
 
 Executable bench-xor
@@ -41,5 +41,5 @@ Executable bench-xor
   C-sources:
     cbits/vector-simd.c
 
-  Ghc-Options: -O2
+  Ghc-Options: -O2 -Wall -fwarn-incomplete-patterns -fwarn-unused-binds
   CC-Options: -msse2 -msse4.2 -O3 -fomit-frame-pointer

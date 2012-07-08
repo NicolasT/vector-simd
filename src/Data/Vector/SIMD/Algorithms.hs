@@ -30,12 +30,8 @@ import Foreign.Storable (Storable, sizeOf)
 import Foreign.C.Types (CSize)
 import Foreign.Ptr (Ptr)
 
-import Control.Monad.ST (runST)
-import Control.Monad.Primitive
-
 import qualified Data.Vector.SIMD as SV
 import qualified Data.Vector.SIMD.Mutable as MSV
-
 
 foreign import ccall unsafe "_vector_simd_xor_sse42" _c_xor_sse42
     :: Ptr a -> Ptr a -> Ptr a -> CSize -> IO ()
@@ -44,7 +40,7 @@ unsafeXorSSE42 :: (Storable a,
     SV.AlignedToAtLeast SV.A16 (o1, o2, o3),
     SV.Alignment o1, SV.Alignment o2, SV.Alignment o3) =>
     SV.Vector o1 a -> SV.Vector o2 a -> SV.Vector o3 a
-unsafeXorSSE42 !a !b = unsafePerformIO $ helper (undefined :: a) a b
+unsafeXorSSE42 !v1 !v2 = unsafePerformIO $ helper (undefined :: a) v1 v2
   where
     helper :: (Storable b,
         SV.AlignedToAtLeast SV.A16 (o4, o5, o6),
