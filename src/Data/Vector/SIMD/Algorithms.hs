@@ -26,10 +26,9 @@ module Data.Vector.SIMD.Algorithms (
 import Data.Word (Word8)
 
 import Foreign (unsafePerformIO)
-import Foreign.Storable (sizeOf)
+import Foreign.Storable (Storable, sizeOf)
 import Foreign.C.Types (CSize)
 import Foreign.Ptr (Ptr)
-import Foreign.Storable (Storable)
 
 import Control.Monad.ST (runST)
 import Control.Monad.Primitive
@@ -53,7 +52,7 @@ unsafeXorSSE42 !a !b = unsafePerformIO $ helper (undefined :: a) a b
         b -> SV.Vector o4 b -> SV.Vector o5 b -> IO (SV.Vector o6 b)
     helper o !a !b = do
         let !l = SV.length a
-            !bl = l * (sizeOf o)
+            !bl = SV.length a * sizeOf o
 
         SV.unsafeWith a $ \(!pa) ->
             SV.unsafeWith b $ \(!pb) -> do
