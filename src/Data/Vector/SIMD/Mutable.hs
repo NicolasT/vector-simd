@@ -19,6 +19,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables, ForeignFunctionInterface, EmptyDataDecls #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleContexts #-}
+{-# LANGUAGE MagicHash, UnboxedTuples #-}
 
 module Data.Vector.SIMD.Mutable (
     MVector(..), IOVector, STVector,
@@ -46,6 +47,10 @@ import Data.Typeable (Typeable)
 import Control.Monad.ST
 
 import Data.Vector.Storable.Internal (getPtr, updPtr)
+
+import GHC.Base
+import GHC.ForeignPtr (ForeignPtr(..))
+import GHC.Ptr (Ptr(..))
 
 data MVector o s a = MVector {-# UNPACK #-} !Int
                              {-# UNPACK #-} !(ForeignPtr a)
@@ -129,21 +134,23 @@ instance (Storable a, Alignment o) => G.MVector (MVector o) a where
         moveArray p q n
     {-# INLINE basicUnsafeMove #-}
 
-foreign import ccall unsafe "_mm_malloc_stub" _mm_malloc :: CSize -> CSize -> IO (Ptr a)
-foreign import ccall unsafe "&_mm_free_stub" finalizer_mm_free :: FinalizerPtr a
-
 mallocVector :: (Storable a, Alignment o) => Int -> o -> IO (ForeignPtr a)
 mallocVector = doMalloc undefined
   where
-    doMalloc :: (Storable a', Alignment o') => a' -> Int -> o' -> IO (ForeignPtr a')
-    doMalloc dummyA size dummyO = do
-        ptr <- _mm_malloc (fromIntegral (size * sizeOf dummyA))
-                (fromIntegral $ alignment dummyO)
-        if ptr == nullPtr
-            then ioError (IOError Nothing ResourceExhausted "_mm_malloc" "out of memory"
-                            Nothing Nothing)
-            else newForeignPtr finalizer_mm_free ptr
+    doMalloc :: (Storable b, Alignment p) => b -> Int -> p -> IO (ForeignPtr b)
+    doMalloc b l p = IO $ \s ->
+        case newAlignedPinnedByteArray# bytes align s of { (# s', ba #) ->
+          case newForeignPtr_ (Ptr $ byteArrayContents# (unsafeCoerce# ba)) of { IO f ->
+            case f s' of { (# s''', p #) -> (# s''', p #) }
+          }
+        }
+      where
+        !(I# size)  = sizeOf b
+        !(I# len) = l
+        !bytes = size *# len
+        !(I# align) = alignment p
     {-# INLINE doMalloc #-}
+    {-# SPECIALIZE doMalloc :: W.Word8 -> Int -> A16 -> IO (ForeignPtr W.Word8) #-}
 {-# INLINE mallocVector #-}
 {-# SPECIALIZE mallocVector :: Int -> A16 -> IO (ForeignPtr W.Word8) #-}
 

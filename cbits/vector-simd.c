@@ -19,7 +19,6 @@
 #include <stdint.h>
 
 #include <xmmintrin.h>
-#include <mm_malloc.h>
 
 //#define DEBUG
 
@@ -29,20 +28,6 @@
 #else
 # define MSG
 #endif
-
-void * _mm_malloc_stub(size_t size, size_t alignment) {
-        void *ptr = _mm_malloc(size, alignment);
-
-        MSG("_mm_malloc(%d, %d) = %p\n", size, alignment, ptr);
-
-        return ptr;
-}
-
-void _mm_free_stub(void *ptr) {
-        MSG("_mm_free(%p)\n", ptr);
-
-        return _mm_free(ptr);
-}
 
 void _vector_simd_xor_sse42(const uint32_t *a, const uint32_t *b, const uint32_t *o, ssize_t len) {
         ssize_t i = 0,
