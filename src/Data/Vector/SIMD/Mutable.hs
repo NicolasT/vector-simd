@@ -137,14 +137,21 @@ mallocVector = doMalloc undefined
   where
     doMalloc :: (Storable b, Alignment p) => b -> Int -> p -> IO (ForeignPtr b)
     doMalloc b !l a = do
-        !ba <- BA.newAlignedPinnedByteArray bytes align
-        let !(PT.Addr addr) = BA.mutableByteArrayContents ba
-            !ptr = Ptr addr
+        if bytes `rem` align /= 0
+            then error "Data.Vector.SIMD.Mutable.mallocVector: Unaligned length"
+            else do
+                !ba <- BA.newAlignedPinnedByteArray bytes align
+                let !(PT.Addr addr) = BA.mutableByteArrayContents ba
+                    !ptr = Ptr addr
 
-        newForeignPtr_ ptr
+                newForeignPtr_ ptr
       where
+        bytes :: Int
         !bytes = sizeOf b * l
+        {-# INLINE bytes #-}
+        align :: Int
         !align = alignment a
+        {-# INLINE align #-}
     {-# INLINE doMalloc #-}
     {-# SPECIALIZE doMalloc :: W.Word8 -> Int -> A16 -> IO (ForeignPtr W.Word8) #-}
 {-# INLINE mallocVector #-}
