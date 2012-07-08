@@ -19,7 +19,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, DeriveDataTypeable #-}
 {-# LANGUAGE ScopedTypeVariables, ForeignFunctionInterface, EmptyDataDecls #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleContexts #-}
-{-# LANGUAGE MagicHash, UnboxedTuples #-}
+{-# LANGUAGE MagicHash, UnboxedTuples, BangPatterns #-}
 
 module Data.Vector.SIMD.Mutable (
     MVector(..), IOVector, STVector,

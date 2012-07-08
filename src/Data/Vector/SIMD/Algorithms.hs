@@ -17,7 +17,7 @@
  -}
 
 {-# LANGUAGE BangPatterns, ForeignFunctionInterface #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, CPP #-}
 
 module Data.Vector.SIMD.Algorithms (
     unsafeXorSSE42
@@ -26,9 +26,13 @@ module Data.Vector.SIMD.Algorithms (
 import Data.Word (Word8)
 
 import Foreign (unsafePerformIO)
-import Foreign.Storable (Storable, sizeOf)
-import Foreign.C.Types (CSize)
 import Foreign.Ptr (Ptr)
+import Foreign.Storable (Storable, sizeOf)
+#if __GLASGOW_HASKELL__ >= 701
+import Foreign.C.Types (CSize(CSize))
+#else
+import Foreign.C.Types (CSize)
+#endif
 
 import qualified Data.Vector.SIMD as SV
 import qualified Data.Vector.SIMD.Mutable as MSV
