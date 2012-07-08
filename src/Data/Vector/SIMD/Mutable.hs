@@ -20,10 +20,12 @@
 {-# LANGUAGE ScopedTypeVariables, ForeignFunctionInterface, EmptyDataDecls #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleContexts #-}
 {-# LANGUAGE MagicHash, UnboxedTuples, BangPatterns #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Data.Vector.SIMD.Mutable (
     MVector(..), IOVector, STVector,
-    AlignedToAtLeast, Alignment, A1, A2, A4, A8, A16, A32,
+    AlignedToAtLeast, AlignedToAtLeast2, AlignedToAtLeast3, AlignedToAtLeast4,
+    Alignment, A1, A2, A4, A8, A16, A32,
     new,
     unsafeWith
 ) where
@@ -61,10 +63,17 @@ class Alignment o where
 data One
 data Twice n
 
-class AlignedToAtLeast n a
+class Alignment a => AlignedToAtLeast n a
 instance AlignedToAtLeast One One
-instance AlignedToAtLeast One (Twice a)
+instance Alignment a => AlignedToAtLeast One (Twice a)
 instance AlignedToAtLeast n a => AlignedToAtLeast (Twice n) (Twice a)
+
+class (AlignedToAtLeast n a, AlignedToAtLeast n b) => AlignedToAtLeast2 n a b
+instance (AlignedToAtLeast n a, AlignedToAtLeast n b) => AlignedToAtLeast2 n a b
+class (AlignedToAtLeast n a, AlignedToAtLeast n b, AlignedToAtLeast n c) => AlignedToAtLeast3 n a b c
+instance (AlignedToAtLeast n a, AlignedToAtLeast n b, AlignedToAtLeast n c) => AlignedToAtLeast3 n a b c
+class (AlignedToAtLeast n a, AlignedToAtLeast n b, AlignedToAtLeast n c, AlignedToAtLeast n d) => AlignedToAtLeast4 n a b c d
+instance (AlignedToAtLeast n a, AlignedToAtLeast n b, AlignedToAtLeast n c, AlignedToAtLeast n d) => AlignedToAtLeast4 n a b c d
 
 type A1 = One
 type A2 = Twice A1
@@ -78,12 +87,6 @@ instance Alignment A1 where
 instance Alignment a => Alignment (Twice a) where
     alignment _ = 2 * alignment (undefined :: a)
 
-instance (AlignedToAtLeast n a, AlignedToAtLeast n b) =>
-    AlignedToAtLeast n (a, b)
-instance (AlignedToAtLeast n a, AlignedToAtLeast n b, AlignedToAtLeast n c) =>
-    AlignedToAtLeast n (a, b, c)
-instance (AlignedToAtLeast n a, AlignedToAtLeast n b, AlignedToAtLeast n c, AlignedToAtLeast n d) =>
-    AlignedToAtLeast n (a, b, c, d)
 
 instance (Storable a, Alignment o) => G.MVector (MVector o) a where
     basicLength (MVector n _) = n

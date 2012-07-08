@@ -20,7 +20,8 @@
 
 module Data.Vector.SIMD (
     Vector,
-    Alignment, AlignedToAtLeast, A1, A2, A4, A8, A16, A32,
+    Alignment, A1, A2, A4, A8, A16, A32,
+    AlignedToAtLeast, AlignedToAtLeast2, AlignedToAtLeast3, AlignedToAtLeast4,
     fromListN,
     length,
     unsafeWith,
@@ -41,7 +42,9 @@ import Data.Typeable (Typeable)
 
 import Control.Monad.Primitive
 
-import Data.Vector.SIMD.Mutable (MVector(..), Alignment, AlignedToAtLeast, A1, A2, A4, A8, A16, A32)
+import Data.Vector.SIMD.Mutable (
+    MVector(..), Alignment, A1, A2, A4, A8, A16, A32,
+    AlignedToAtLeast, AlignedToAtLeast2, AlignedToAtLeast3, AlignedToAtLeast4)
 
 import Prelude hiding (length, zipWith)
 
