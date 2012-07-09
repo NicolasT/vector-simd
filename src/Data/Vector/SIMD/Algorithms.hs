@@ -51,8 +51,10 @@ unsafeXorSSE42 !v1 !v2 = runST $ unsafePrimToPrim $ helper (undefined :: a) v1 v
         SV.AlignedToAtLeast3 SV.A16 o4 o5 o6) =>
         b -> SV.Vector o4 b -> SV.Vector o5 b -> IO (SV.Vector o6 b)
     helper o !a !b = do
-        let !l = SV.length a
-            !bl = SV.length a * sizeOf o
+        let !la = SV.length a
+            !lb = SV.length b
+            !l = min la lb
+            !bl = l * sizeOf o
 
         SV.unsafeWith a $ \(!pa) ->
             SV.unsafeWith b $ \(!pb) -> do
