@@ -27,7 +27,8 @@ module Data.Vector.SIMD.Mutable (
     AlignedToAtLeast, AlignedToAtLeast2, AlignedToAtLeast3, AlignedToAtLeast4,
     Alignment, A1, A2, A4, A8, A16, A32,
     new,
-    unsafeWith
+    unsafeWith,
+    toStorable
 ) where
 
 import qualified Data.Vector.Generic.Mutable as G
@@ -48,6 +49,7 @@ import GHC.Ptr (Ptr(..))
 import qualified Data.Primitive.ByteArray as BA
 import qualified Data.Primitive.Types as PT
 
+import qualified Data.Vector.Storable.Mutable as MSV
 import Data.Vector.Storable.Internal (getPtr, updPtr)
 
 data MVector o s a = MVector {-# UNPACK #-} !Int
@@ -176,3 +178,7 @@ new = G.new
 unsafeWith :: (Storable a, Alignment o) => IOVector o a -> (Ptr a -> IO b) -> IO b
 unsafeWith (MVector _ fp) = withForeignPtr fp
 {-# INLINE unsafeWith #-}
+
+toStorable :: (Storable a, PrimMonad m) => MVector o (PrimState m) a -> m (MSV.MVector (PrimState m) a)
+toStorable (MVector l fp) = return $ MSV.MVector l fp
+{-# INLINE toStorable #-}

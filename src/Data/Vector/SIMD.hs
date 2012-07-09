@@ -27,10 +27,12 @@ module Data.Vector.SIMD (
     unsafeWith,
     unsafeFreeze,
     zipWith,
-    toList
+    toList,
+    toStorable
 ) where
 
 import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Storable as SV
 import Data.Vector.Storable.Internal (updPtr)
 
 import Foreign.Ptr
@@ -106,3 +108,7 @@ unsafeFreeze = G.unsafeFreeze
 toList :: (Storable a, Alignment o) => Vector o a -> [a]
 toList = G.toList
 {-# INLINE toList #-}
+
+toStorable :: Storable a => Vector o a -> SV.Vector a
+toStorable (Vector l fp) = SV.unsafeFromForeignPtr0 fp l
+{-# INLINE toStorable #-}
