@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <xmmintrin.h>
+#include <mm_malloc.h>
 
 #define DEBUG 0
 /* On my machine, adding prefetching slows things down significantly (+- 80%) */
@@ -31,14 +32,21 @@
 # define MSG
 #endif
 
+void * _mm_malloc_stub(size_t size, size_t alignment) {
+        void *ptr = _mm_malloc(size, alignment);
+
+        MSG("_mm_malloc(%d, %d) = %p\n", size, alignment, ptr);
+
+        return ptr;
+}
+
+void _mm_free_stub(void *ptr) {
+        MSG("_mm_free(%p)\n", ptr);
+
+        return _mm_free(ptr);
+}
+
 #define LIKELY(expr) (__builtin_expect(!!(expr), 1))
-
-
-#define UPDATE_POINTERS(n) \
-        do { \
-                a += n; b += n; c += n; \
-        } while(0)
-
 
 void _vector_simd_xor_sse42(const uint8_t *a, const uint8_t *b, const uint8_t *c, ssize_t len) {
 
