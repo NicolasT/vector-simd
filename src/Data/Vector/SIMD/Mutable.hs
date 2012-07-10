@@ -44,13 +44,11 @@ import Control.Monad.Primitive
 
 import Data.Typeable (Typeable)
 
-import GHC.Ptr (Ptr(..))
-
-import qualified Data.Primitive.ByteArray as BA
-import qualified Data.Primitive.Types as PT
-
 import qualified Data.Vector.Storable.Mutable as MSV
 import Data.Vector.Storable.Internal (getPtr, updPtr)
+
+import GHC.Base
+import GHC.Ptr (Ptr(..))
 
 data MVector o s a = MVector {-# UNPACK #-} !Int
                              {-# UNPACK #-} !(ForeignPtr a)
@@ -153,19 +151,19 @@ mallocVector = doMalloc undefined
     doMalloc b !l a = do
         if bytes `rem` align /= 0
             then error "Data.Vector.SIMD.Mutable.mallocVector: Unaligned length"
-            else do
-                !ba <- BA.newAlignedPinnedByteArray bytes align
-                let !(PT.Addr addr) = BA.mutableByteArrayContents ba
-                    !ptr = Ptr addr
-
-                newForeignPtr_ ptr
+            else IO $ \s ->
+                case newAlignedPinnedByteArray# bytes# align# s of { (# s', ba #) ->
+                case newForeignPtr_ (Ptr $ byteArrayContents# (unsafeCoerce# ba)) of { IO f ->
+                case f s' of { (# s'', p #) -> (# s'', p #) }
+              }
+            }
       where
-        bytes :: Int
-        !bytes = sizeOf b * l
-        {-# INLINE bytes #-}
-        align :: Int
+        !(I# size)  = sizeOf b
+        !(I# len) = l
+        !bytes# = size *# len
+        !bytes = I# bytes#
         !align = alignment a
-        {-# INLINE align #-}
+        !(I# align#) = align
     {-# INLINE doMalloc #-}
     {-# SPECIALIZE doMalloc :: W.Word8 -> Int -> A16 -> IO (ForeignPtr W.Word8) #-}
 {-# INLINE mallocVector #-}
