@@ -38,15 +38,25 @@ import qualified Data.Vector.SIMD.Algorithms as MVA
 main :: IO ()
 main = do
     -- Sanity check
-    let uv = benchUV uv1024a uv1024b
-        sv = benchSV sv1024a sv1024b
-        mv = benchMV mv1024a mv1024b
-        mva = benchMVA mv1024a mv1024b
+    let uv0 = benchUV uv1024a uv1024b
+        uv1 = benchUV uv4096a uv4096b
+        uv' = benchUV uv4336a uv4336b
+        sv0 = benchSV sv1024a sv1024b
+        sv1 = benchSV sv4096a sv4096b
+        mv0 = benchMV mv1024a mv1024b
+        mv1 = benchMV mv4096a mv4096b
+        mva0 = benchMVA mv1024a mv1024b
+        mva1 = benchMVA mv4096a mv4096b
+        mva' = benchMVA mv4336a mv4336b
 
     putStr "Checking sanity / correctness... "
-    assert "SV" $ SV.toList sv == UV.toList uv
-    assert "MV" $ MV.toList mv == UV.toList uv
-    assert "MVA" $ MV.toList mva == UV.toList uv
+    assert "SV0" $ SV.toList sv0 == UV.toList uv0
+    assert "SV1" $ SV.toList sv1 == UV.toList uv1
+    assert "MV0" $ MV.toList mv0 == UV.toList uv0
+    assert "MV1" $ MV.toList mv1 == UV.toList uv1
+    assert "MVA0" $ MV.toList mva0 == UV.toList uv0
+    assert "MVA0" $ MV.toList mva1 == UV.toList uv1
+    assert "MVA'" $ MV.toList mva' == UV.toList uv'
     putStrLn "looks OK!"
 
     CM.defaultMainWith CC.defaultConfig (return ()) [
@@ -60,25 +70,29 @@ main = do
         ],
         CM.bgroup "XOR SIMD Vector" [
             CM.bench "benchMV 1024" $ CM.whnf (benchMV mv1024a) mv1024b,
-            CM.bench "benchMV 4096" $ CM.whnf (benchMV mv4096a) mv4096b
+            CM.bench "benchMV 4096" $ CM.whnf (benchMV mv4096a) mv4096b,
+            CM.bench "benchMV 4336" $ CM.whnf (benchMV mv4336a) mv4336b
         ],
         CM.bgroup "XOR SIMD Vector using SSE4.2" [
             CM.bench "benchMVA 1024" $ CM.whnf (benchMVA mv1024a) mv1024b,
-            CM.bench "benchMVA 4096" $ CM.whnf (benchMVA mv4096a) mv4096b
+            CM.bench "benchMVA 4096" $ CM.whnf (benchMVA mv4096a) mv4096b,
+            CM.bench "benchMVA 4336" $ CM.whnf (benchMVA mv4336a) mv4336b
         ]
        ]
   where
-    uv1024a, uv1024b, uv4096a, uv4096b :: UV.Vector Word8
+    uv1024a, uv1024b, uv4096a, uv4096b, uv4336a, uv4336b :: UV.Vector Word8
     !(!uv1024a, !uv1024b) = gen UV.fromListN 1024
     !(!uv4096a, !uv4096b) = gen UV.fromListN 4096
+    !(!uv4336a, !uv4336b) = gen UV.fromListN 4336
 
     sv1024a, sv1024b, sv4096a, sv4096b :: SV.Vector Word8
     !(!sv1024a, !sv1024b) = gen SV.fromListN 1024
     !(!sv4096a, !sv4096b) = gen SV.fromListN 4096
 
-    mv1024a, mv1024b, mv4096a, mv4096b :: MV.Vector MV.A32 Word8
+    mv1024a, mv1024b, mv4096a, mv4096b, mv4336a, mv4336b :: MV.Vector MV.A16 Word8
     !(!mv1024a, !mv1024b) = gen MV.fromListN 1024
     !(!mv4096a, !mv4096b) = gen MV.fromListN 4096
+    !(!mv4336a, !mv4336b) = gen MV.fromListN 4336
 
     gen :: (Int -> [Word8] -> v Word8) -> Int -> (v Word8, v Word8)
     gen f n = (a, b)
@@ -105,24 +119,14 @@ benchSV !a !b = r
     !r = SV.zipWith xor a b
     {-# INLINE r #-}
 
-benchMV :: MV.Vector MV.A32 Word8 -> MV.Vector MV.A32 Word8 -> MV.Vector MV.A32 Word8
+benchMV :: MV.Vector MV.A16 Word8 -> MV.Vector MV.A16 Word8 -> MV.Vector MV.A16 Word8
 benchMV !a !b = r
   where
-    r :: MV.Vector MV.A32 Word8
+    r :: MV.Vector MV.A16 Word8
     !r = MV.zipWith xor a b
     {-# INLINE r #-}
 
--- unsafeXorSSE42 is typed
--- unsafeXorSSE42 :: (Storable a,
---  MSV.AlignedToAtLeast MSV.A16 o1, MSV.Alignment o1,
---  MSV.AlignedToAtLeast MSV.A16 o2, MSV.Alignment o2,
---  MSV.AlignedToAtLeast MSV.A16 o3, MSV.Alignment o3) =>
---  SV.Vector o1 a -> SV.Vector o2 a -> SV.Vector o3 a
--- We restrict the type of benchMVA just a little more, to show how A32 is
--- compatible with the requested A16 (as intended).
--- The result is of a different type though, imagining we only need a 16-byte
--- aligned vector further on for some random reason
-benchMVA :: MV.Vector MV.A32 Word8 -> MV.Vector MV.A32 Word8 -> MV.Vector MV.A16 Word8
+benchMVA :: MV.Vector MV.A16 Word8 -> MV.Vector MV.A16 Word8 -> MV.Vector MV.A16 Word8
 benchMVA !a !b = r
   where
     r :: MV.Vector MV.A16 Word8
