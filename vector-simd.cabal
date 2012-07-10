@@ -43,3 +43,19 @@ Executable bench-xor
 
   Ghc-Options: -O2 -Wall -fwarn-incomplete-patterns -fwarn-unused-binds
   CC-Options: -msse2 -msse4.2 -O3 -fomit-frame-pointer
+
+Executable test-corruption
+  Main-is: test-corruption.hs
+  Build-Depends:
+    base >= 3 && < 5,
+    vector,
+    primitive
+
+  Hs-source-dirs:
+    src
+
+  C-sources:
+    cbits/vector-simd.c
+
+  Ghc-Options: -Wall -fwarn-incomplete-patterns -fwarn-unused-binds
+  CC-Options: -msse2 -msse4.2 -O3 -fomit-frame-pointer
