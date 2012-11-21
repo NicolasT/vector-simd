@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module Main (main) where
 
 import qualified Data.Vector.Unboxed as UV

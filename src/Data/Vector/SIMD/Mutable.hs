@@ -35,7 +35,7 @@ import qualified Data.Vector.Generic.Mutable as G
 
 import qualified Data.Word as W
 
-import Foreign.C.Types (CSize)
+import Foreign.C.Types (CSize(..))
 import Foreign.Storable hiding (alignment)
 import Foreign.ForeignPtr
 import Foreign.Ptr (Ptr, nullPtr)
